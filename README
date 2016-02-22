@@ -1,0 +1,5 @@
+Dependencies:
+
+Snap7 - http://snap7.sourceforge.net/
+ActiveMQCpp - http://activemq.apache.org/cms/
+SimpleJSON - https://github.com/MJPA/SimpleJSON [included]
