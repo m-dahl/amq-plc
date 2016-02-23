@@ -103,6 +103,7 @@ struct cmd { std::wstring id; int type; int value;
 
 typedef std::map<std::wstring,cmd>::iterator sub_iter;
 std::map<std::wstring,cmd> subscribe_map;
+bool force_send = false;
 
 void poll_func() {
   static std::wstring last_json;
@@ -148,10 +149,11 @@ void poll_func() {
 
 	JSONValue *json = new JSONValue(reply);
   std::wstring json_str = json->Stringify(true);
-  if (last_json != json_str) {
+  if (force_send || last_json != json_str) {
     wprintf(L"Sending new subscribtion state:\n%S\n",json_str.c_str());
     amq_send(json_str);
     last_json = json_str;
+    force_send = false;
   }
   delete json;
 }
@@ -253,6 +255,7 @@ int subscribe(JSONValue *main_object) {
     }
   } else goto error;
   wprintf(L"Currently subscribed to %d addresses.\n", subscribe_map.size());
+  force_send = true;
 
   return 1;
 error:
