@@ -109,7 +109,8 @@ bool read(int db, int byt, size_t size, void *data) {
   std::wstring error;
   int res = plc->DBRead(db, byt, size, data);
   if(!ok_or_error(res, L"Failed to read data", error)) {
-    wprintf(L"%S\n", error.c_str());
+    wprintf(L"%S -- db: %d, byte: %d, size: %d\n",
+            error.c_str(),db,byt,size);
     return false;
   }
   return true;
@@ -119,7 +120,8 @@ bool write(int db, int byt, size_t size, void *data) {
   std::wstring error;
   int res = res = plc->DBWrite(db, byt, size, data);
   if(!ok_or_error(res, L"Failed to write data", error)) {
-    wprintf(L"%S\n", error.c_str());
+    wprintf(L"%S -- db: %d, byte: %d, size: %d\n",
+            error.c_str(),db,byt,size);
     return false;
   }
   return true;
