@@ -105,6 +105,26 @@ typedef std::map<std::wstring,cmd>::iterator sub_iter;
 std::map<std::wstring,cmd> subscribe_map;
 bool force_send = false;
 
+bool read(int db, int byt, size_t size, void *data) {
+  std::wstring error;
+  int res = plc->DBRead(db, byt, size, data);
+  if(!ok_or_error(res, L"Failed to read data", error)) {
+    wprintf(L"%S\n", error.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool write(int db, int byt, size_t size, void *data) {
+  std::wstring error;
+  int res = res = plc->DBWrite(db, byt, size, data);
+  if(!ok_or_error(res, L"Failed to write data", error)) {
+    wprintf(L"%S\n", error.c_str());
+    return false;
+  }
+  return true;
+}
+
 void poll_func() {
   static std::wstring last_json;
   // read data and send it out
@@ -114,17 +134,17 @@ void poll_func() {
 
     if(c.type == PLC_TYPE_BIT) {
       byte data = 0;
-      int res = plc->DBRead(c.db, c.byt, 1, &data);
+      read(c.db, c.byt, 1, &data);
       c.value = data & (1 << c.bit);
     }
     else if(c.type == PLC_TYPE_INT8) {
       byte data = 0;
-      int res = plc->DBRead(c.db, c.byt, 1, &data);
+      read(c.db, c.byt, 1, &data);
       c.value = data;
     }
     else if(c.type == PLC_TYPE_INT16) {
       word data = 0;
-      int res = plc->DBRead(c.db, c.byt, 2, &data);
+      read(c.db, c.byt, 2, &data);
       c.value = (signed short int)(((data >> 8) & 0xFF) | ((data << 8) & 0xFF00));
     }
 
@@ -197,18 +217,18 @@ int write(JSONValue *main_object) {
 
       if(c.type == PLC_TYPE_BIT) {
         byte data = 0;
-        int res = plc->DBRead(c.db, c.byt, 1, &data);
+        read(c.db, c.byt, 1, &data);
         if(c.value) data = data | (1 << c.bit);
         else data = data & ~(1 << c.bit);
-        res = plc->DBWrite(c.db, c.byt, 1, &data);
+        write(c.db, c.byt, 1, &data);
       }
       else if(c.type == PLC_TYPE_INT8) {
         byte data = (byte)c.value;
-        int res = plc->DBWrite(c.db, c.byt, 1, &data);
+        write(c.db, c.byt, 1, &data);
       }
       else if(c.type == PLC_TYPE_INT16) {
         word data = ((c.value >> 8) & 0xFF) | ((c.value << 8) & 0xFF00);
-        int res = plc->DBWrite(c.db, c.byt, 2, &data);
+        write(c.db, c.byt, 2, &data);
       }
       else if(c.type == PLC_TYPE_NOT_IMPLEMENTED) {
         goto error;
