@@ -8,6 +8,7 @@
 #include <decaf/lang/Integer.h>
 #include <decaf/lang/Long.h>
 #include <decaf/lang/System.h>
+#include <decaf/util/concurrent/Mutex.h>
 #include <activemq/core/ActiveMQConnectionFactory.h>
 #include <activemq/util/Config.h>
 #include <cms/Connection.h>
@@ -155,6 +156,7 @@ private:
   amq_msg_func msg_func;
   amq_poll_func poll_func;
   std::string topic;
+  Mutex* mtx;
 
 private:
 
@@ -174,11 +176,14 @@ public:
 		sessionTransacted(sessionTransacted),
     running(true),
     topic(topic),
-		brokerURI(brokerURI) {
+    brokerURI(brokerURI),
+    mtx(NULL) {
+    mtx = new Mutex("snap7");
 	}
 
 	virtual ~consumer() {
 		cleanup();
+    delete mtx;
 	}
 
 	void close() {
@@ -217,7 +222,9 @@ public:
 			std::cerr.flush();
 
       while(running) {
+        mtx->lock();
         poll_func();
+        mtx->unlock();
         Thread::sleep(100);
       }
       running = true;
@@ -240,7 +247,9 @@ public:
 			if (textMessage != NULL) {
         std::string msg_ascii = textMessage->getText();
         std::wstring msg(msg_ascii.begin(),msg_ascii.end());
+        mtx->lock();
         msg_func(msg);
+        mtx->unlock();
 			} else {
         printf("Did not receive text message...\n");
       }
